@@ -14,11 +14,15 @@ def setup_plagiarism_detector(file_type):
     return PlagiarismDetector(reader, normalizer, block_creator, hash_function)
 
 if __name__ == "__main__":
-    detector = setup_plagiarism_detector('docx')
+    detector = setup_plagiarism_detector('pdf')
     if detector:
-        result = detector.detect('path_to_file1.docx', 'path_to_file2.docx')
-        print(f"Porcentagem de similaridade: {result['similarity_percentage']}")
-        for block1, block2 in result['common_blocks']:
-            print(f"Blocos comuns: {block1} | {block2}")
+        result = detector.detect('artigo-2017.pdf', 'artigo-LSTM-revolucionario.pdf')
+        
+        print("Blocos comuns de n-gramas:")
+        i = 0
+        for ngram1, ngram2 in result['common_ngrams']:
+            print(f"Blocos {i}: {ngram1} | {ngram2}")
+            i += 1
+        print(f"Porcentagem de similaridade: {result['similarity_percentage']:.2f}%")
     else:
         print("Tipo de arquivo não suportado")

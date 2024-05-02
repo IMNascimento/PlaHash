@@ -6,23 +6,38 @@ class PlagiarismDetector:
     def __init__(self, reader, normalizer, block_creator, hash_function):
         self.reader = reader
         self.normalizer = normalizer
-        self.block_creator = block_creator
-        self.hash_function = hash_function
+        self.block_creator = block_creator  # Não será mais usado diretamente
+        self.hash_function = hash_function  # Não será mais usado diretamente
 
-    def detect(self, file1, file2):
+    def detect(self, file1, file2, n=1):
+        # Lê e normaliza os textos
         text1 = self.normalizer.normalize(self.reader.read(file1))
         text2 = self.normalizer.normalize(self.reader.read(file2))
-
-        blocks1 = self.block_creator.create_blocks(text1)
-        blocks2 = self.block_creator.create_blocks(text2)
-
-        hashes1 = {self.hash_function.hash(block): block for block in blocks1}
-        hashes2 = {self.hash_function.hash(block): block for block in blocks2}
-
-        common_hashes = set(hashes1.keys()) & set(hashes2.keys())
-        similarity = len(common_hashes) / len(hashes1) * 100
-
+        
+        # Calcula a similaridade e obtém n-gramas comuns
+        similarity, common_ngrams = self.calculate_similarity(text1, text2, n)
+        
         return {
-            'similarity_percentage': similarity,
-            'common_blocks': [(hashes1[h], hashes2[h]) for h in common_hashes]
+            'similarity_percentage': similarity * 100,
+            'common_ngrams': common_ngrams
         }
+    
+    def calculate_similarity(self, text1, text2, n=3):
+        block_creator = BlockCreator()
+        hasher = SimpleHash()
+        
+        ngrams1 = block_creator.create_ngrams(text1, n)
+        ngrams2 = block_creator.create_ngrams(text2, n)
+        
+        hash_to_ngrams1 = {hasher.hash(ngram): ngram for ngram in ngrams1}
+        hash_to_ngrams2 = {hasher.hash(ngram): ngram for ngram in ngrams2}
+        
+        # Interseção dos hashes para encontrar n-gramas comuns
+        common_hashes = set(hash_to_ngrams1.keys()) & set(hash_to_ngrams2.keys())
+        common_ngrams = [(hash_to_ngrams1[h], hash_to_ngrams2[h]) for h in common_hashes]
+        
+        # Cálculo da similaridade
+        union_hashes = set(hash_to_ngrams1.keys()) | set(hash_to_ngrams2.keys())
+        similarity = len(common_hashes) / len(union_hashes) if union_hashes else 0
+        
+        return similarity, common_ngrams
